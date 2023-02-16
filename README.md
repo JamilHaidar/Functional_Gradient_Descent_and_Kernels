@@ -40,6 +40,94 @@ This is good for when data points $y_i$ are available to "train" on, provided th
 
 ---
 
+# Kernel Trick and RKHS
+
+## Theory
+
+A kernel $K: X \times X \to \mathbb{R}$ is a function that generalizes dot products where:
+```math
+K(x_i,x_j) = {\langle \phi(x_i),\phi(x_j) \rangle}_{H_K}
+```
+where $H_K$ is the Hilbert space corresponding with **$K$**.
+
+Basically, it is a dot product between "features" of x ($\phi(x)$). So why do we care about representing x in a different space? A reproducing kernel Hilbert space (RKHS), is a space of functions where every function **$f$** is some linear combination of the kernel **$K$** evaluated at some "centers" $x_{C_f}$:
+
+```math
+f = \sum_{i=1}^{n} \alpha_{f_i} K(\cdot,x_{C_{f_{i}}})
+```
+
+This means, if there is a function **$f \in H_K$**, it can be determined completely by **$\alpha_f$** and **$x_{C_f}$**!
+
+Assume we want to estimate do functional gradient descent where our loss function is $L(f)$ as defined above. We can represent our estimate $f(x)$ in multiple ways (in the discrete calculus of variations sense) as a combination of functions, which are considered the eigenfunctions of the space our kernel represents.
+
+```math
+f(x) = \sum_{l=1}^{\infty} \hat{f}_{l} e_l(x)
+```
+
+In the case of the Fourier Series, we have
+```math
+f(x) = \sum_{l=-\infty}^{\infty} f_l e^{i2{\pi}lx}
+```
+We can see clearly that we can represent a function $f(x)$ as a linear combination of the eigenfunctions $\phi(x) = e^{i2{\pi}lx}$ with some coefficients. However, assuming we have the kernel, but not the eigenfunctions of our space, this could get tricky. We can use Mercer's theorem which states that for the Gram matrix **$\mathcal{K}$** where
+```math
+(\mathcal{K})_{ij} = k(x_i,x_j)
+```
+we can compute an eigenvector decomposition as
+```math
+\mathcal{K} = \mathbf{U}^T \Lambda \mathbf{U}
+```
+where  
+
+```math
+(\mathcal{K})_{ij} = \phi(x_i)^T \phi(x_j)
+```
+```math
+\phi(x_i) = \Lambda^{1/2} \mathbf{U}_{:,i}
+```
+Instead of computing $\phi(x)$ which may be difficult, we can use the kernel trick instead. The kernel trick is defined as:
+
+> Kernel methods owe their name to the use of kernel functions, which enable them to operate in a high-dimensional, implicit feature space without ever computing the coordinates of the data in that space, but rather by simply computing the inner products between the images of all pairs of data in the feature space. This operation is often computationally cheaper than the explicit computation of the coordinates.This approach is called the **"kernel trick"**
+
+Here's the idea in an example. For the RBF kernel:
+```math
+k(x_i, x_j) = \exp\left(-\frac{\lVert x_i - x_j \rVert^2}{2\sigma^2}\right)
+```
+For this kernel, the dimension of the feature space defined by $\phi(\cdot)$ is $D=\infty$. The kernel trick will allow us to avoid explicitly computing $\phi(\cdot)$. We can easily compute the $n \times n$ Gram matrix using the kernel, even though we have implicitly projected our objects to an infinite dimensional feature space.
+
+The whole idea boils down to this. We want to represent the estimated function f(x) as linear combination of basis functions. Instead of doing this computation, we can instead express it as a linear combination of a kernel evaluated at specific "centers".
+
+## Application
+For
+```math
+L(f) = \sum_{i=1}^n(y_i - f(x_i))^2 + \lambda\lVert f \rVert ^2
+```
+we have the functional derivative $DL(f)$ given by
+```math
+DL(f) = \sum_{i=1}^n -2(y_i-f(x_i)) \cdot K(x_i,\cdot) + 2\lambda f
+```
+where $f_k$ at iteration $k$ can be calculated by:
+```math
+f_k = \sum_{i=1}^{n} \alpha_{f_ki} K(\cdot,x_i)
+```
+Finally, we can choose to represent $f_k$ implicitly by $\alpha_k$, making the final update as:
+```math
+\alpha_{f_{k+1}} = 2 \eta (y-f_k(x)) + (1-2\lambda \eta)\alpha_{f_k}
+```
+## Algorithm
+Finally, we define our algorithm and implement it.
+1. Get dataset $x,y:=f(x)$
+2. Create the Gram kernel $K(i,j) = k(x_i,x_j)$, where $k$ is the selected kernel (e.g. RBF kernel)
+3. Initialize $\alpha$ vector (random values close to 0 perhaps)
+4. Perform descent:
+   - Calculate function: $f_k(x) = K \cdot \alpha_k$
+   - Update function: $\alpha_{k+1} = 2 \eta (y-f_k(x)) + (1-2\eta \lambda) \alpha_k$
+
+And we get this result!
+
+
+
+---
+
 # Functional Derivative
 From wikipedia:
 
