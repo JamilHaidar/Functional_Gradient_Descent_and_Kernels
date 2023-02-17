@@ -278,7 +278,7 @@ The approach looks like this
 
 Important things to note:
   - The learning rate (step size) must be tuned correctly or else we risk the solution diverging. 
-  - When an initial condition exists, we don't update that specific point. This means that if $\rho{x_0} = cst$, then the neighboring points $\rho{x_k}$ will be affected by the first degree derivative after $k$ iterations. This is seen only if the functional is affected by degrees of $\rho(x)$. The example $L(\rho) = \int (\rho(x)+\frac{\partial \rho}{\partial x}(x))^2 dx$ solves to $\rho(x) = c_0e^{-x}$. This example is illustrated below.
+  - When an initial condition exists, we don't update that specific point. This means that if $\rho(x_0) = cst$, then the neighboring points $\rho(x_k)$ will be affected by the first degree derivative after $k$ iterations. This is seen only if the functional is affected by degrees of $\rho(x)$. The example $L(\rho) = \int (\rho(x)+\frac{\partial \rho}{\partial x}(x))^2 dx$ solves to $\rho(x) = c_0e^{-x}$. This example is illustrated below.
   - When calculating the gradient numerically, I used central difference for points not at the edges. For points at the edges I used forward difference and backward difference.
 
 ## Sin function
@@ -295,6 +295,7 @@ Now, I'll get to a differential equation: $L(\rho) = \int f(x,\rho(x), \partial 
 
 https://user-images.githubusercontent.com/60647115/219735230-c973d981-8e07-4847-a606-7ae34cee695f.mp4
 
+We can see very clearly how the initial point being set to 1 is propagating the information about the estimated function's derivative with every iteration.
 
 # Conclusion
 
