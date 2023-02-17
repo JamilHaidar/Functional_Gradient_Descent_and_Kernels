@@ -58,7 +58,7 @@ f = \sum_{i=1}^{n} \alpha_{f_i} K(\cdot,x_{C_{f_{i}}})
 
 This means, if there is a function **$f \in H_K$**, it can be determined completely by **$\alpha_f$** and **$x_{C_f}$**!
 
-Assume we want to estimate do functional gradient descent where our loss function is $L(f)$ as defined above. We can represent our estimate $f(x)$ in multiple ways (in the discrete calculus of variations sense) as a combination of functions, which are considered the eigenfunctions of the space our kernel represents.
+Assume we want to do functional gradient descent where our loss function is $L(f)$ as defined above. We can represent our estimate $f(x)$ in multiple ways (in the discrete calculus of variations sense) as a combination of functions, which are considered the eigenfunctions of the space our kernel represents.
 
 ```math
 f(x) = \sum_{l=1}^{\infty} \hat{f}_{l} e_l(x)
