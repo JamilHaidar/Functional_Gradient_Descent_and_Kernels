@@ -148,7 +148,7 @@ k(x_i,x_j) &= \int_{\mathbb{R}^D} e^{-i(x_i-x_j)^T\omega}p(\omega) d\omega \\ &\
 \end{align*}
 ```
 
-where $C$ is the number of spectral samples from the density $p$. This is is in fact a *Monte Carlo* (MC) approximation to the integral. Through the standard trigonometric identity $cos(u − v) = cos(u) cos(v) + sin(u) sin(v)$ we arrive at the $2C$-dimensional mapping $\phi : \mathcal{X} \rightarrow \mathbb{R}^{2C}$the final representation:
+where $C$ is the number of spectral samples from the density $p$. This is is in fact a *Monte Carlo* (MC) approximation to the integral. Through the standard trigonometric identity $cos(u − v) = cos(u) cos(v) + sin(u) sin(v)$ we arrive at the $2C$ -dimensional mapping $\phi : \mathcal{X} \rightarrow \mathbb{R}^{2C}$ the final representation:
 
 ```math
 \begin{align*}
