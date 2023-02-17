@@ -1,5 +1,5 @@
-# Functional Gradient Descent
-I explore the theory behind calculus of variations, functionals, divergence theorem, functional differentiation, and functional gradient descent. I implement functional gradient descent using both analytical and numerical methods.
+# Functional Gradient Descent and Kernels
+I explore the theory behind calculus of variations, functionals, divergence theorem, functional differentiation, calculus of variations, and functional gradient descent. I implement functional gradient descent using both analytical and numerical methods. Furthermore, I explore kernels, reproducing kernel hilbert spaces, support vector machines, and so much more.
 
 ---
 
@@ -50,7 +50,7 @@ K(x_i,x_j) = {\langle \phi(x_i),\phi(x_j) \rangle}_{H_K}
 ```
 where $H_K$ is the Hilbert space corresponding with **$K$**.
 
-Basically, it is a dot product between "features" of x ($\phi(x)$). So why do we care about representing x in a different space? A reproducing kernel Hilbert space (RKHS), is a space of functions where every function **$f$** is some linear combination of the kernel **$K$** evaluated at some "centers" $x_{C_f}$:
+Basically, it is a dot product between "features" of x ( $\phi(x)$ ). So why do we care about representing x in a different space? A reproducing kernel Hilbert space (RKHS), is a space of functions where every function **$f$** is some linear combination of the kernel **$K$** evaluated at some "centers" $x_{C_f}$:
 
 ```math
 f = \sum_{i=1}^{n} \alpha_{f_i} K(\cdot,x_{C_{f_{i}}})
@@ -122,8 +122,46 @@ Finally, we define our algorithm and implement it.
    - Calculate function: $f_k(x) = K \cdot \alpha_k$
    - Update function: $\alpha_{k+1} = 2 \eta (y-f_k(x)) + (1-2\eta \lambda) \alpha_k$
 
-And we get this result!
+### RBF Kernel
 
+Using the RBF Kernel defined earlier, we get the following results:
+
+
+https://user-images.githubusercontent.com/60647115/219679722-ad381867-f537-4130-b685-78c7064fe4f3.mp4
+
+
+After 200 iterations using the RBF kernel with $\eta = 0.01, \lambda = 0.01, \gamma := \frac{1}{2\sigma^2} = 4$. However, let's zoom out a little and see what's going on:
+
+
+https://user-images.githubusercontent.com/60647115/219680575-cfdded7c-47a1-41fd-8db4-8c06d7441a3f.mp4
+
+
+It looks like there is a region where the function becomes flat, and the rbf function with $\gamma = 4$ can no longer fit better.
+
+### Fourier series Kernel
+
+I will now attempt to implement a fourier series kernel. The kernel will be defined on $\mathbb{R}^D$ as:
+```math
+\begin{align*}
+k(x_i,x_j) &= \int_{\mathbb{R}^D} e^{-i(x_i-x_j)^T\omega}p(\omega) d\omega \\ &\approx \frac{1}{C} \sum_{c=1}^{C} e^{-i(x_i-x_j)^T\omega_c}\\&=\langle \hat{\phi(x_i)},\hat{\phi(x_j)}\rangle \\
+\therefore k(x_i,x_j) &\approx \frac{1}{C} \sum_{c=1}^{C} \left[ cos(\omega^T_c (x_i-x_j)) \right]
+\end{align*}
+```
+
+where $C$ is the number of spectral samples from the density $p$. This is is in fact a *Monte Carlo* (MC) approximation to the integral. Through the standard trigonometric identity $cos(u − v) = cos(u) cos(v) + sin(u) sin(v)$ we arrive at the $2C$-dimensional mapping $\phi : \mathcal{X} \rightarrow \mathbb{R}^{2C}$the final representation:
+
+```math
+\begin{align*}
+\hat{\phi(x)} = \frac{1}{\sqrt{C}} \Bigl[ & cos(x^T\omega_1), \dots, cos(x^T\omega_C),\\ & sin(x^T\omega_1), \dots, sin(x^T\omega_C) \Bigr]
+\end{align*}
+```
+
+I specified the kernel to be
+```math
+k(x_i,x_j) = \sum_{\omega_c=0}^{99} cos(\omega_c (x_i-x_j))
+```
+
+https://user-images.githubusercontent.com/60647115/219693430-340d9d31-36a5-4a6e-851d-98a4c5e4a566.mp4
 
 
 ---
@@ -215,5 +253,63 @@ This can be verified using MATLAB's ``functionalDerivative`` method:
 
 > ![image](https://user-images.githubusercontent.com/60647115/216766663-54ac40d6-1931-4b22-8519-53dfe8ef50f3.png)
 
-# Numerical Solution
-Will be updated soon.
+# Functional Gradient Descent: Numerical Solution
+
+Finally, after understanding how the functional derivative works, we will attempt functional gradient descent. Unlike the Kernel approach, we do not have the functional $L(f)$. Instead, we assume there's simply a black box that takes as input the function $f(x)$ and returns a value. I will be relying on this definition:
+
+```math
+\begin{align*}
+\int \frac{\partial F}{\partial f}(x) \eta(x) \ dx &= \lim_{h \rightarrow 0}\frac{F(f + h \eta) - F(f)}{h} \\ &= \frac{d F(f + h\eta)}{dh}\bigg\rvert_{h=0}
+\end{align*}
+```
+
+This means that to get the gradient along a direction, we can perturb the function $f$ with some other function $\eta$, and simply get the gradient by making this perturbation small enough to approach the limit.
+
+The approach looks like this 
+1. Generate range of independent variable x
+3. Generate a perturbation function $\phi(x)$
+4. Initialize learning rate $\eta$ and epsilon $\epsilon$
+2. Generate initial estimate $\rho(x)$
+3. Set any initial conditions $\rho(0) = c$
+4. Start iterating until max iterations reached or the Functional reaches a threshold cost
+   - Up until a specific degree $d$, generate $\frac{\partial^d \rho}{\partial x^d}, \frac{\partial^d \phi}{\partial x^d}$
+   - Calculate the gradient $Df = \frac{f(x,\rho + \epsilon \phi,\partial \rho + \epsilon \partial \phi,\dots) - f(x,\rho,\partial \rho,\dots)}{\epsilon}$
+   - Update the estimate $\rho_{k+1}(x) = \rho_k(x) - \eta Df$
+
+Important things to note:
+  - The learning rate (step size) must be tuned correctly or else we risk the solution diverging. 
+  - When an initial condition exists, we don't update that specific point. This means that if $\rho{x_0} = cst$, then the neighboring points $\rho{x_k}$ will be affected by the first degree derivative after $k$ iterations. This is seen only if the functional is affected by degrees of $\rho(x)$. The example $L(\rho) = \int (\rho(x)+\frac{\partial \rho}{\partial x}(x))^2 dx$ solves to $\rho(x) = c_0e^{-x}$. This example is illustrated below.
+  - When calculating the gradient numerically, I used central difference for points not at the edges. For points at the edges I used forward difference and backward difference.
+
+## Sin function
+
+I'll start with a simple functional: $L(\rho) = \int f(x,\rho(x)) dx$ where $f(x,\rho(x)) = \frac{1}{2}(\rho(x)-sin(x))^2 dx$. This is a simple function that is minimized when $\rho(x) = sin(x)$. I initialize $\rho(x) = 1$ (arbitrary). This is how it went:
+
+
+https://user-images.githubusercontent.com/60647115/219733330-b7883b96-339c-406f-b53c-939cda98344e.mp4
+
+## Decaying Exponential function
+
+Now, I'll get to a differential equation: $L(\rho) = \int f(x,\rho(x), \partial \rho(x)) dx$ where $f(x,\rho(x),\partial \rho(x)) = \frac{1}{2}(\rho(x)-\frac{\partial \rho}{\partial x}(x))^2 dx$ with $\rho(0) = 1$. The solution should converge to $\rho(x) = e^{-x}$. This required more iterations as I needed to decrease the learning rate and wanted to make it more fine (increased number of points):
+
+
+https://user-images.githubusercontent.com/60647115/219735230-c973d981-8e07-4847-a606-7ae34cee695f.mp4
+
+
+# Conclusion
+
+This turned out to be a huge project as I had not planned to dive as deep as I did. However, I learned so much about calculus of variations, divergence theorem, functionals, functional differentiation, SVMs, Kernels, Hilbert spaces, RKHS, Mercer's theorem, Gram kernels, and so much more interesting math that I had to go over grad lectures from multiple universities, wikipedia, books, and published papers to be enough to scratch the surface of this field and make something that applies this theory that actually works.
+
+# References
+- [Wikipedia Functional Derivative](https://en.wikipedia.org/wiki/Functional_derivative)
+- [Lecture 1](http://www.cs.cmu.edu/~16831-f12/notes/F12/16831_lecture21_danielsm.pdf),[Lecture 2](http://www.cs.cmu.edu/~16831-f14/notes/F10/16831_lecture24_varunnr/16831_lectureNov11.vramakri.pdf)
+- [Gradient Boosting blog](https://nicolas-hug.com/blog/gradient_boosting_descent)
+- Tompkins, A., & Ramos, F. (2018, April). Fourier feature approximations for periodic kernels in time-series modelling. In Proceedings of the AAAI Conference on Artificial Intelligence (Vol. 32, No. 1). ([link](https://ojs.aaai.org/index.php/AAAI/article/view/11696/11555))
+- Great reference for Functional Gradient Descent with Kernels: [Simple Complexities Blog](https://simple-complexities.github.io/optimization/functional/gradient/descent/2020/03/04/functional-gradient-descent.html)
+- Summary reference for [Reproducing Kernel Hilbert Spaces](https://people.eecs.berkeley.edu/~bartlett/courses/281b-sp08/7.pdf)
+- Great simple to understand reference to RKHS and kernels [lecture](https://www.gatsby.ucl.ac.uk/~gretton/coursefiles/lecture4_introToRKHS.pdf)
+- Kernels and Kernel Methods [lecture](https://www.cs.princeton.edu/~bee/courses/scribe/lec_10_09_2013.pdf)
+- [Wikipedia Kernel Method](https://en.wikipedia.org/wiki/Kernel_method)
+- [Wikipedia Divergence](https://en.wikipedia.org/wiki/Divergence) and [Wolfram Divergence](https://mathworld.wolfram.com/Divergence.html)
+- [Wikipedia Divergence Theorem](https://en.wikipedia.org/wiki/Divergence_theorem) and [Wolfram Divergence Theorem](https://mathworld.wolfram.com/DivergenceTheorem.html)
+- [SVM and Kernel SVM](https://towardsdatascience.com/svm-and-kernel-svm-fed02bef1200)
